@@ -1,55 +1,70 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Extensions.Configuration;
-
 
 namespace FilesWatcherService
 {
-        public static class ConfigValueProvider
-        {
+    public static class ConfigValueProvider
+    {
         private static readonly IConfigurationRoot Configuration;
 
         static ConfigValueProvider()
-            {
-                var builder = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        {
+            ConfigureLog();
 
-                Configuration = builder.Build();
-            }
+            var builder = new ConfigurationBuilder()
+             .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
+            Configuration = builder.Build();
+        }
+
+        public static void ConfigureLog()
+        {
+            var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"Log\\Log{DateTime.Now:yyyy-MM-dd-HH-mm}.txt");
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console()
+                .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true)
+                .CreateLogger();
+        }
 
         public static string Get(string name)
         {
+            var result = string.Empty;
+
             try
             {
-                return Configuration[name];
+                result = Configuration[name];
             }
-
-            catch (Exception)
+            catch (Exception ex)
             {
-                return null;
-
+                Log.Error($"Error getting configuration value for '{name}'", ex);
             }
+
+            return result;
         }
 
 
-        public static List<string> GetArray(string arrName)
+        public static List<string> GetList(string name)
         {
+            var result = new List<string>();
+
             try
             {
-                var myArray = Configuration.GetSection(arrName).AsEnumerable();
-                return myArray.Select(pair => pair.Value).Where(x=>!String.IsNullOrEmpty(x)).ToList();
+                var myArray = Configuration.GetSection(name).AsEnumerable();
+                result = myArray.Select(pair => pair.Value).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
             }
-
-            catch (Exception)
+            catch (Exception ex)
             {
-                return null;
+                Log.Error($"Error getting configuration value for '{name}'", ex);
             }
 
+            return result;
         }
-
     }
 }

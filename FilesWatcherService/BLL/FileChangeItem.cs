@@ -1,7 +1,8 @@
-﻿using System;
+﻿using FilesWatcherService.Models;
+using Serilog;
+using System;
 using System.IO;
 using System.Timers;
-using FilesWatcherService.Models;
 
 namespace FilesWatcherService.BLL
 {
@@ -17,7 +18,6 @@ namespace FilesWatcherService.BLL
         #endregion
 
         #region public / protected vars
-
         public string FileName { get; }
         public string FullPath { get; }
         public DateTime LastEventTime { get; private set; } = DateTime.Now;
@@ -32,9 +32,7 @@ namespace FilesWatcherService.BLL
 
         #endregion
 
-
         public int permittedIntervalBetweenFiles = 60;
-
 
         #region Getters
 
@@ -47,7 +45,6 @@ namespace FilesWatcherService.BLL
         internal double GetIntervalSeconds => TimeSpan.FromMilliseconds(Timer.Interval).TotalSeconds;
 
         #endregion
-
 
         public FileChangeItem()
         {
@@ -64,8 +61,7 @@ namespace FilesWatcherService.BLL
             State = WatchItemState.Updating;
         }
 
-        public FileChangeItem(FileSystemEventArgs args, int initialTimerInterval) :
-            this(initialTimerInterval)
+        public FileChangeItem(FileSystemEventArgs args, int initialTimerInterval) : this(initialTimerInterval)
         {
             FileName = args.Name;
             FullPath = args.FullPath;
@@ -89,13 +85,11 @@ namespace FilesWatcherService.BLL
                 TimeForFileToBeReady = TimeForFileToBeReady + (int)(eventTime - LastEventTime).TotalSeconds + 3;
 
                 //Console.WriteLine($"New TimeForFileToBeReady: {TimeForFileToBeReady}, FileName: {FileName}");
-
                 //LogMessage($"New TimeForFileToBeReady: {TimeForFileToBeReady}, FileName: {FileName}");
 
                 Timer.Interval = TimeSpan.FromSeconds(TimeForFileToBeReady).TotalMilliseconds;
             }
         }
-
 
         private void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
@@ -111,7 +105,7 @@ namespace FilesWatcherService.BLL
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex.ToString());
+                Log.Error("OnTimedEvent", ex);
             }
         }
 
@@ -133,8 +127,6 @@ namespace FilesWatcherService.BLL
             Timer.Start();
         }
 
-
-
         #region IDisposable Support
 
         private bool disposedValue = false; // To detect redundant calls
@@ -153,8 +145,6 @@ namespace FilesWatcherService.BLL
                 disposedValue = true;
             }
         }
-
-
 
         // This code added to correctly implement the disposable pattern.
         public void Dispose()
