@@ -1,5 +1,4 @@
-﻿using System;
-namespace FilesWatcherService.Models
+﻿namespace FilesWatcherService.Models
 {
     public class FileChangeEventArgs
     {
